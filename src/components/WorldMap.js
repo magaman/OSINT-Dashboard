@@ -352,6 +352,9 @@ export class WorldMap {
     /**
      * Create popup HTML content with themed styling
      */
+    /**
+     * Create popup HTML content with themed styling
+     */
     createPopupContent(event) {
         const severityLabels = { 5: 'CRITICAL', 4: 'HIGH', 3: 'MEDIUM', 2: 'LOW', 1: 'INFO' };
         const severityLabel = severityLabels[event.importance] || 'LOW';
@@ -359,50 +362,32 @@ export class WorldMap {
         const timeAgo = this.formatTimeAgo(event.timestamp);
 
         return `
-      <div class="popup-content" style="
-        font-family: 'Inter', sans-serif;
-        background: #111820;
-        padding: 12px 32px 12px 12px;
-        border-radius: 6px;
-      ">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="font-size: 11px; color: #00d4ff; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
-            ${event.source}
-          </span>
-          <span style="font-size: 9px; padding: 2px 6px; background: ${severity.color}22; 
-                       border: 1px solid ${severity.color}; border-radius: 3px; color: ${severity.color}; font-weight: 600;">
-            ${severityLabel}
-          </span>
-        </div>
-        <div style="font-size: 13px; font-weight: 600; color: #e8eaed; margin-bottom: 6px; line-height: 1.4;">
-          ${event.title}
-        </div>
-        <div style="font-size: 11px; color: #9aa0a6; margin-bottom: 8px;">
-          ${timeAgo}
-        </div>
-        ${event.summary ? `
-          <div style="font-size: 11px; color: #9aa0a6; line-height: 1.5; margin-bottom: 8px; padding-top: 6px; border-top: 1px solid #3c4043;">
-            ${event.summary}
-          </div>
-        ` : ''}
-        ${event.sourceCount > 1 ? `
-          <div style="margin-top: 8px; padding: 4px 8px; background: rgba(255, 51, 102, 0.15); 
-                      border: 1px solid #ff3366; border-radius: 4px; display: inline-block;
-                      font-size: 10px; color: #ff3366; font-weight: 600;">
-            ⚡ ${event.sourceCount} CORRELATED SOURCES
-          </div>
-        ` : ''}
-        ${event.sourceUrl ? `
-          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #3c4043;">
-            <a href="${event.sourceUrl}" target="_blank" rel="noopener" 
-               style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; 
-                      color: #00d4ff; text-decoration: none; font-weight: 500;">
-              📰 Read Full Story ↗
-            </a>
-          </div>
-        ` : ''}
-      </div>
-    `;
+            <div class="osint-popup">
+                <div class="popup-header" style="border-bottom: 1px solid ${severity.color};">
+                    <span class="popup-source">${event.source}</span>
+                    <span class="popup-severity" style="color: ${severity.color}; border: 1px solid ${severity.color}; background: ${severity.color}22;">
+                        ${severityLabel}
+                    </span>
+                </div>
+                <div class="popup-body">
+                    <div class="popup-title">${event.title}</div>
+                    <div class="popup-meta">${timeAgo}</div>
+                    ${event.summary ? `<div class="popup-summary">${event.summary}</div>` : ''}
+                    ${event.sourceCount > 1 ? `
+                        <div class="popup-tag" style="border-color: #ff3366; color: #ff3366; background: rgba(255, 51, 102, 0.15);">
+                            ⚡ ${event.sourceCount} CORRELATED SOURCES
+                        </div>
+                    ` : ''}
+                    ${event.sourceUrl ? `
+                        <div class="popup-actions">
+                            <a href="${event.sourceUrl}" target="_blank" class="popup-link">
+                                📰 Read Full Story ↗
+                            </a>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
     }
 
     /**
@@ -495,40 +480,28 @@ export class WorldMap {
             const timeAgo = this.formatTimeAgo(event.timestamp);
 
             return `
-                <div class="cluster-event-item" style="
-                    padding: 10px;
-                    border-bottom: 1px solid #3c4043;
-                    cursor: pointer;
-                    background: #111820;
-                    transition: background 0.2s ease;
-                " onclick="window.open('${event.sourceUrl || '#'}', '_blank')">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span style="font-size: 10px; color: #00d4ff; text-transform: uppercase; letter-spacing: 0.5px;">
-                            ${event.source}
-                        </span>
-                        <span style="font-size: 8px; padding: 1px 4px; background: ${severity.color}22; 
-                                     border: 1px solid ${severity.color}; border-radius: 2px; color: ${severity.color}; font-weight: 600;">
+                <div class="cluster-item" onclick="window.open('${event.sourceUrl || '#'}', '_blank')">
+                    <div class="cluster-item-header">
+                        <span class="cluster-source">${event.source}</span>
+                        <span class="cluster-severity" style="color: ${severity.color}; border-color: ${severity.color}; background: ${severity.color}22;">
                             ${severityLabel}
                         </span>
                     </div>
-                    <div style="font-size: 12px; font-weight: 600; color: #e8eaed; line-height: 1.3; margin-bottom: 4px;">
-                        ${event.title}
-                    </div>
-                    <div style="font-size: 10px; color: #9aa0a6;">
-                        ${timeAgo}
-                    </div>
+                    <div class="cluster-title">${event.title}</div>
+                    <div class="cluster-meta">${timeAgo}</div>
                 </div>
             `;
         }).join('');
 
         return `
-            <div class="cluster-popup-content" style="font-family: 'Inter', sans-serif; background: #0a0e14;">
-                <div style="padding: 10px 32px 10px 10px; background: #1a2332; border-bottom: 2px solid #00d4ff;">
-                    <span style="font-size: 12px; font-weight: 700; color: #00d4ff; letter-spacing: 1px;">
-                        📍 ${events.length} EVENTS IN THIS AREA
+            <div class="osint-popup cluster-popup">
+                <div class="popup-header">
+                    <span class="popup-source">CLUSTER DETECTED</span>
+                    <span class="popup-severity" style="border-color: #00d4ff; color: #00d4ff; background: rgba(0, 212, 255, 0.15);">
+                        ${events.length} EVENTS
                     </span>
                 </div>
-                <div style="max-height: 280px; overflow-y: auto;">
+                <div class="popup-list">
                     ${eventsHtml}
                 </div>
             </div>
