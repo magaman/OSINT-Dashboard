@@ -7,6 +7,7 @@
  */
 
 import L from 'leaflet';
+import 'leaflet.markercluster';
 import { loadCountriesGeoJSON, getCountryGeometry, customRegions } from '../services/countryService.js';
 
 export class WorldMap {
@@ -18,6 +19,7 @@ export class WorldMap {
         this.eventData = new Map(); // eventId -> event data
         this.countriesLoaded = false;
         this.map = null;
+        this.markerClusterGroup = null; // Cluster layer for markers
 
         // Promise that resolves when country data is loaded
         this.countryDataReady = null;
@@ -58,6 +60,36 @@ export class WorldMap {
             prefix: false,
             position: 'bottomright'
         }).addAttribution('© Esri, HERE, Garmin').addTo(this.map);
+
+        // Initialize marker cluster group with custom styling
+        this.markerClusterGroup = L.markerClusterGroup({
+            maxClusterRadius: 50, // Cluster markers within 50px
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: false, // We'll handle click ourselves
+            iconCreateFunction: (cluster) => this.createClusterIcon(cluster)
+        });
+
+        // Handle cluster click - show multi-event popup
+        this.markerClusterGroup.on('clusterclick', (e) => {
+            const cluster = e.layer;
+            const childMarkers = cluster.getAllChildMarkers();
+            const events = childMarkers.map(m => m._eventData).filter(Boolean);
+
+            if (events.length > 0) {
+                const popupContent = this.createClusterPopupContent(events);
+                L.popup({
+                    maxWidth: 350,
+                    maxHeight: 400,
+                    className: 'osint-popup cluster-popup'
+                })
+                    .setLatLng(cluster.getLatLng())
+                    .setContent(popupContent)
+                    .openOn(this.map);
+            }
+        });
+
+        this.markerClusterGroup.addTo(this.map);
     }
 
     /**
@@ -207,7 +239,8 @@ export class WorldMap {
             }
         });
 
-        marker.addTo(this.map);
+        // Add to cluster group instead of directly to map
+        this.markerClusterGroup.addLayer(marker);
         this.markers.set(event.id, marker);
     }
 
@@ -362,6 +395,102 @@ export class WorldMap {
     }
 
     /**
+     * Create custom cluster icon based on severity distribution
+     */
+    createClusterIcon(cluster) {
+        const childMarkers = cluster.getAllChildMarkers();
+        const count = childMarkers.length;
+
+        // Get highest severity in cluster
+        let maxImportance = 2;
+        childMarkers.forEach(m => {
+            const event = m._eventData;
+            if (event && event.importance > maxImportance) {
+                maxImportance = event.importance;
+            }
+        });
+
+        const severity = this.getSeverityColor(maxImportance);
+        const size = count > 20 ? 50 : count > 10 ? 45 : 40;
+
+        return L.divIcon({
+            html: `
+                <div class="cluster-icon" style="
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: ${severity.color}33;
+                    border: 3px solid ${severity.color};
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 14px;
+                    font-weight: bold;
+                    color: ${severity.color};
+                    box-shadow: 0 0 15px ${severity.glow};
+                    cursor: pointer;
+                    transition: transform 0.2s ease;
+                ">
+                    ${count}
+                </div>
+            `,
+            className: 'custom-cluster-icon',
+            iconSize: L.point(size, size),
+            iconAnchor: [size / 2, size / 2]
+        });
+    }
+
+    /**
+     * Create popup content for clustered events
+     */
+    createClusterPopupContent(events) {
+        const severityLabels = { 5: 'CRITICAL', 4: 'HIGH', 3: 'MEDIUM', 2: 'LOW', 1: 'INFO' };
+
+        // Sort by importance (highest first)
+        const sortedEvents = [...events].sort((a, b) => (b.importance || 2) - (a.importance || 2));
+
+        const eventsHtml = sortedEvents.map(event => {
+            const severity = this.getSeverityColor(event.importance);
+            const severityLabel = severityLabels[event.importance] || 'LOW';
+
+            return `
+                <div class="cluster-event-item" style="
+                    padding: 10px;
+                    border-bottom: 1px solid #3c4043;
+                    cursor: pointer;
+                " onclick="window.open('${event.sourceUrl || '#'}', '_blank')">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-size: 10px; color: #00d4ff; text-transform: uppercase; letter-spacing: 0.5px;">
+                            ${event.source}
+                        </span>
+                        <span style="font-size: 8px; padding: 1px 4px; background: ${severity.color}22; 
+                                     border: 1px solid ${severity.color}; border-radius: 2px; color: ${severity.color}; font-weight: 600;">
+                            ${severityLabel}
+                        </span>
+                    </div>
+                    <div style="font-size: 12px; font-weight: 600; color: #e8eaed; line-height: 1.3;">
+                        ${event.title}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="cluster-popup-content" style="font-family: Inter, sans-serif;">
+                <div style="padding: 10px; background: #1a2332; border-bottom: 2px solid #00d4ff; margin-bottom: 0;">
+                    <span style="font-size: 12px; font-weight: 700; color: #00d4ff; letter-spacing: 1px;">
+                        📍 ${events.length} EVENTS IN THIS AREA
+                    </span>
+                </div>
+                <div style="max-height: 280px; overflow-y: auto;">
+                    ${eventsHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
      * Focus on a specific event
      */
     focusEvent(eventId, zoom = 5) {
@@ -445,12 +574,12 @@ export class WorldMap {
             const show = this.shouldShowEvent(event, filterLevel);
 
             if (show) {
-                if (!this.map.hasLayer(marker)) {
-                    marker.addTo(this.map);
+                if (!this.markerClusterGroup.hasLayer(marker)) {
+                    this.markerClusterGroup.addLayer(marker);
                 }
             } else {
-                if (this.map.hasLayer(marker)) {
-                    this.map.removeLayer(marker);
+                if (this.markerClusterGroup.hasLayer(marker)) {
+                    this.markerClusterGroup.removeLayer(marker);
                 }
             }
         });

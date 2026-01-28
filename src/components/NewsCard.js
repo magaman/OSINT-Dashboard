@@ -15,9 +15,16 @@ export function createNewsCard(event, onClickCallback) {
   card.dataset.eventId = event.id;
   card.dataset.importance = event.importance || 2;
 
-  // Add high priority class for correlated/important stories
-  if (event.importance >= 4) {
-    card.classList.add('high-priority');
+  // Add severity class for proper color coding
+  const importance = event.importance || 2;
+  if (importance >= 5) {
+    card.classList.add('severity-critical');
+  } else if (importance === 4) {
+    card.classList.add('severity-high');
+  } else if (importance === 3) {
+    card.classList.add('severity-medium');
+  } else {
+    card.classList.add('severity-low');
   }
 
   // Add breaking news class

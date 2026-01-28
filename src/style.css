@@ -344,13 +344,30 @@ body {
   left: 0;
   width: 4px;
   height: 100%;
-  background: var(--accent-amber);
+  background: var(--accent-green);
+  /* Default to low/green */
   transition: background var(--transition-fast);
 }
 
-.news-card.high-priority::before {
+/* Severity-specific bar colors */
+.news-card.severity-critical::before {
   background: var(--accent-red);
   box-shadow: var(--glow-red);
+}
+
+.news-card.severity-high::before {
+  background: var(--accent-orange);
+  box-shadow: 0 0 15px rgba(255, 102, 0, 0.4);
+}
+
+.news-card.severity-medium::before {
+  background: var(--accent-amber);
+  box-shadow: var(--glow-amber);
+}
+
+.news-card.severity-low::before {
+  background: var(--accent-green);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
 .news-card:hover {
@@ -651,25 +668,55 @@ body {
 /* --- Custom Map Markers --- */
 /* Override Leaflet's default divIcon styling to prevent drift */
 .leaflet-marker-icon.custom-marker,
-.leaflet-marker-icon.earthquake-marker {
+.leaflet-marker-icon.earthquake-marker,
+.leaflet-marker-icon.custom-cluster-icon {
   background: none !important;
   border: none !important;
 }
 
-.custom-marker {
-  /* Container needs no extra positioning - Leaflet handles it */
-}
-
 .custom-marker .marker-dot {
-  /* Remove position/transform - let Leaflet anchor handle positioning */
   display: block;
 }
 
 .earthquake-marker .earthquake-icon {
-  /* Remove position/transform - let Leaflet anchor handle positioning */
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Custom cluster icon styling */
+.custom-cluster-icon .cluster-icon:hover {
+  transform: scale(1.1);
+}
+
+/* Override default MarkerCluster styles for dark theme */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background: rgba(0, 212, 255, 0.3) !important;
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background: rgba(0, 212, 255, 0.6) !important;
+  color: #fff !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Cluster popup styling */
+.cluster-popup .leaflet-popup-content {
+  margin: 0;
+  padding: 0;
+}
+
+.cluster-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  overflow: hidden;
+}
+
+.cluster-event-item:hover {
+  background: rgba(0, 212, 255, 0.1) !important;
 }
 
 .marker-dot {
