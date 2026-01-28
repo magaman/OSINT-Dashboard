@@ -4,12 +4,34 @@
  * No API key required for basic functionality
  */
 
-// CORS proxy that doesn't require API key
-const CORS_PROXY = 'https://api.allorigins.win/get?url=';
-
 import { extractLocation } from './locationService.js';
 
-// Major news RSS feeds
+// CORS proxies with fallback support
+const CORS_PROXIES = [
+    'https://api.allorigins.win/get?url=',
+    'https://corsproxy.io/?'
+];
+
+// Severity keywords for content-based classification
+const SEVERITY_KEYWORDS = {
+    critical: [
+        'killed', 'dead', 'deaths', 'died', 'explosion', 'attack', 'attacks',
+        'war', 'earthquake', 'tsunami', 'massacre', 'terrorist', 'terrorism',
+        'bomb', 'bombing', 'casualties', 'fatalities', 'murder', 'assassin'
+    ],
+    high: [
+        'strike', 'strikes', 'protest', 'protests', 'arrested', 'emergency',
+        'crash', 'crashed', 'fire', 'shooting', 'violence', 'violent',
+        'clashes', 'injured', 'wounded', 'hostage', 'siege', 'riot'
+    ],
+    medium: [
+        'election', 'summit', 'sanctions', 'investigation', 'trial', 'accused',
+        'warning', 'threat', 'crisis', 'tensions', 'conflict', 'dispute',
+        'controversy', 'scandal', 'fraud', 'corruption'
+    ]
+};
+
+// Major news RSS feeds - using reliable endpoints
 const RSS_FEEDS = {
     bbc: {
         name: 'BBC',
@@ -21,9 +43,9 @@ const RSS_FEEDS = {
         url: 'https://www.reutersagency.com/feed/?taxonomy=best-sectors&post_type=best',
         category: 'world'
     },
-    aljazeera: {
-        name: 'Al Jazeera',
-        url: 'https://www.aljazeera.com/xml/rss/all.xml',
+    ap: {
+        name: 'AP News',
+        url: 'https://feedx.net/rss/ap.xml',
         category: 'world'
     },
     npr: {
@@ -31,15 +53,15 @@ const RSS_FEEDS = {
         url: 'https://feeds.npr.org/1004/rss.xml',
         category: 'world'
     },
-    guardian: {
-        name: 'Guardian',
-        url: 'https://www.theguardian.com/world/rss',
+    france24: {
+        name: 'France24',
+        url: 'https://www.france24.com/en/rss',
         category: 'world'
     }
 };
 
 /**
- * Fetch and parse RSS feed
+ * Fetch and parse RSS feed with fallback proxy support
  */
 export async function fetchRSSFeed(feedKey) {
     const feed = RSS_FEEDS[feedKey];
@@ -48,22 +70,30 @@ export async function fetchRSSFeed(feedKey) {
         return [];
     }
 
-    try {
-        const encodedUrl = encodeURIComponent(feed.url);
-        const response = await fetch(`${CORS_PROXY}${encodedUrl}`);
+    // Try each proxy until one works
+    for (const proxy of CORS_PROXIES) {
+        try {
+            const encodedUrl = encodeURIComponent(feed.url);
+            const response = await fetch(`${proxy}${encodedUrl}`, {
+                signal: AbortSignal.timeout(10000) // 10 second timeout
+            });
 
-        if (!response.ok) {
-            throw new Error(`RSS fetch error: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`RSS fetch error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const xmlText = data.contents || data;
+
+            return parseRSSXML(xmlText, feed.name);
+        } catch (error) {
+            console.warn(`Proxy ${proxy} failed for ${feedKey}:`, error.message);
+            continue; // Try next proxy
         }
-
-        const data = await response.json();
-        const xmlText = data.contents;
-
-        return parseRSSXML(xmlText, feed.name);
-    } catch (error) {
-        console.error(`RSS fetch error for ${feedKey}:`, error);
-        return [];
     }
+
+    console.error(`All proxies failed for ${feedKey}`);
+    return [];
 }
 
 /**
@@ -113,14 +143,10 @@ function parseRSSXML(xmlText, sourceName) {
             // Check if title suggests breaking news
             const isBreaking = /breaking|urgent|just in|developing|alert/i.test(title);
 
-            // Calculate importance
-            let importance = 2; // default low
-            if (isBreaking) importance = 4; // high for breaking news
-            else if (isRecent) importance = 3; // medium for recent
-
-            // Extract location from headline and description
+            // Calculate importance using keyword analysis
             const cleanTitle = cleanHTML(title);
             const cleanDesc = cleanHTML(description);
+            const importance = calculateSeverity(cleanTitle, cleanDesc, isBreaking, isRecent);
             const extractedLocation = extractLocation(cleanTitle) || extractLocation(cleanDesc);
 
             events.push({
@@ -153,6 +179,55 @@ function parseRSSXML(xmlText, sourceName) {
         console.error('RSS parse error:', error);
         return [];
     }
+}
+
+/**
+ * Calculate severity based on keyword analysis
+ * Returns importance level 2-5
+ */
+function calculateSeverity(title, description, isBreaking, isRecent) {
+    const text = (title + ' ' + description).toLowerCase();
+    let score = 2; // Base score (low)
+
+    // Check for critical keywords (+3)
+    for (const keyword of SEVERITY_KEYWORDS.critical) {
+        if (text.includes(keyword)) {
+            score = Math.max(score, 5); // Critical
+            break;
+        }
+    }
+
+    // Check for high keywords if not already critical (+2)
+    if (score < 5) {
+        for (const keyword of SEVERITY_KEYWORDS.high) {
+            if (text.includes(keyword)) {
+                score = Math.max(score, 4); // High
+                break;
+            }
+        }
+    }
+
+    // Check for medium keywords if not already high (+1)
+    if (score < 4) {
+        for (const keyword of SEVERITY_KEYWORDS.medium) {
+            if (text.includes(keyword)) {
+                score = Math.max(score, 3); // Medium
+                break;
+            }
+        }
+    }
+
+    // Boost for breaking news annotation
+    if (isBreaking && score < 5) {
+        score = Math.min(score + 1, 5);
+    }
+
+    // Slight boost for very recent news (within 1 hour)
+    if (isRecent && score < 4) {
+        score = Math.min(score + 1, 4);
+    }
+
+    return score;
 }
 
 /**
