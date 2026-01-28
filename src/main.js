@@ -7,7 +7,7 @@
 import './style.css';
 import { NewsFeed } from './components/NewsFeed.js';
 import { WorldMap } from './components/WorldMap.js';
-import { fetchAllEvents, getCachedEvents } from './services/aggregatorService.js';
+import { fetchAllEvents, getCachedEvents, getFeedHealth } from './services/aggregatorService.js';
 
 // Application state
 let newsFeed = null;
@@ -80,9 +80,10 @@ async function refreshEvents() {
     // Render news feed
     newsFeed.render(events);
 
-    // Update event counter and timestamps
+    // Update event counter, timestamps, and health
     updateEventCounter(events.length);
     updateDataTimestamps();
+    updateFeedHealth();
 
     console.log(`✅ Loaded ${events.length} live events`);
   } catch (error) {
@@ -148,6 +149,51 @@ function formatTime(date) {
     minute: '2-digit',
     second: '2-digit',
     hour12: false
+  });
+}
+
+/**
+ * Update feed health indicator
+ */
+function updateFeedHealth() {
+  const health = getFeedHealth();
+  const healthDot = document.getElementById('healthDot');
+  const dropdown = document.getElementById('healthDropdown');
+
+  if (!healthDot || !dropdown) return;
+
+  // Determine overall health status
+  const statuses = [health.gdelt?.status, health.usgs?.status, health.rss?.status];
+  const hasError = statuses.includes('error');
+  const hasEmpty = statuses.includes('empty');
+
+  // Update main health dot
+  healthDot.className = 'health-dot';
+  if (hasError) {
+    healthDot.classList.add('error');
+  } else if (hasEmpty) {
+    healthDot.classList.add('warning');
+  }
+
+  // Update individual feed items
+  ['gdelt', 'usgs', 'rss'].forEach(feedName => {
+    const item = dropdown.querySelector(`[data-feed="${feedName}"]`);
+    if (!item) return;
+
+    const feedData = health[feedName];
+    const statusDot = item.querySelector('.feed-status');
+    const countEl = item.querySelector('.feed-count');
+
+    if (statusDot) {
+      statusDot.className = 'feed-status';
+      if (feedData?.status) {
+        statusDot.classList.add(feedData.status);
+      }
+    }
+
+    if (countEl) {
+      countEl.textContent = feedData?.eventCount || 0;
+    }
   });
 }
 

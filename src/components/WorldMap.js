@@ -378,7 +378,7 @@ export class WorldMap {
           ${event.title}
         </div>
         <div style="font-size: 11px; color: #9aa0a6; margin-bottom: 8px;">
-          🕐 ${timeAgo}
+          ${timeAgo}
         </div>
         ${event.summary ? `
           <div style="font-size: 11px; color: #9aa0a6; line-height: 1.5; margin-bottom: 8px; padding-top: 6px; border-top: 1px solid #3c4043;">
@@ -515,7 +515,7 @@ export class WorldMap {
                         ${event.title}
                     </div>
                     <div style="font-size: 10px; color: #9aa0a6;">
-                        🕐 ${timeAgo}
+                        ${timeAgo}
                     </div>
                 </div>
             `;

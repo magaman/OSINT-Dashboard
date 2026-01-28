@@ -76,6 +76,26 @@ body {
   line-height: 1.5;
 }
 
+/* Global themed scrollbar for all elements */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--accent-cyan-dim);
+  border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
 #app {
   display: flex;
   flex-direction: column;
@@ -161,21 +181,23 @@ body {
   background: var(--accent-cyan-dim);
   border: 1px solid var(--accent-cyan);
   border-radius: 20px;
+  height: 28px;
+  /* Match LIVE badge height */
 }
 
 .event-counter-badge .counter-value {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--accent-cyan);
   text-shadow: var(--glow-cyan);
-  min-width: 24px;
+  min-width: 20px;
   text-align: center;
 }
 
 .event-counter-badge .counter-label {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--accent-cyan);
   letter-spacing: 1px;
@@ -205,6 +227,114 @@ body {
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* Health indicator pill with dropdown */
+.health-indicator {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  height: 28px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.health-indicator:hover {
+  border-color: var(--accent-cyan);
+}
+
+.health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  transition: background var(--transition-fast);
+}
+
+.health-dot.warning {
+  background: var(--accent-amber);
+}
+
+.health-dot.error {
+  background: var(--accent-red);
+}
+
+.health-text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+.health-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 8px;
+  padding: var(--spacing-sm);
+  min-width: 180px;
+  z-index: 1000;
+  display: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.health-indicator:hover .health-dropdown {
+  display: block;
+}
+
+.health-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 4px;
+}
+
+.health-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.health-item .feed-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.health-item .feed-status.healthy {
+  background: var(--accent-green);
+}
+
+.health-item .feed-status.empty {
+  background: var(--accent-amber);
+}
+
+.health-item .feed-status.error {
+  background: var(--accent-red);
+}
+
+.health-item .feed-name {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+  flex: 1;
+}
+
+.health-item .feed-count {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent-cyan);
 }
 
 .header-right {
