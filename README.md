@@ -2,7 +2,6 @@
 
 A real-time Open Source Intelligence (OSINT) monitoring dashboard that aggregates global news, significant events, and geological data onto an interactive 3D-styled map.
 
-![OSINT Dashboard Screenshot](https://github.com/magaman/OSINT-Dashboard/raw/main/public/vite.svg) *Note: Add a real screenshot here*
 
 ## ✨ Features
 
