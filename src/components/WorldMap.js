@@ -350,17 +350,23 @@ export class WorldMap {
     }
 
     /**
-     * Create popup HTML content
+     * Create popup HTML content with themed styling
      */
     createPopupContent(event) {
         const severityLabels = { 5: 'CRITICAL', 4: 'HIGH', 3: 'MEDIUM', 2: 'LOW', 1: 'INFO' };
         const severityLabel = severityLabels[event.importance] || 'LOW';
         const severity = this.getSeverityColor(event.importance);
+        const timeAgo = this.formatTimeAgo(event.timestamp);
 
         return `
-      <div class="popup-content" style="font-family: Inter, sans-serif;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <span style="font-size: 11px; color: #00d4ff; text-transform: uppercase; letter-spacing: 1px;">
+      <div class="popup-content" style="
+        font-family: 'Inter', sans-serif;
+        background: #111820;
+        padding: 12px;
+        border-radius: 6px;
+      ">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 11px; color: #00d4ff; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">
             ${event.source}
           </span>
           <span style="font-size: 9px; padding: 2px 6px; background: ${severity.color}22; 
@@ -368,14 +374,19 @@ export class WorldMap {
             ${severityLabel}
           </span>
         </div>
-        <div style="font-size: 14px; font-weight: 600; color: #e8eaed; margin-bottom: 8px; line-height: 1.4;">
+        <div style="font-size: 13px; font-weight: 600; color: #e8eaed; margin-bottom: 6px; line-height: 1.4;">
           ${event.title}
         </div>
-        <div style="font-size: 12px; color: #9aa0a6; line-height: 1.5;">
-          ${event.summary || ''}
+        <div style="font-size: 11px; color: #9aa0a6; margin-bottom: 8px;">
+          🕐 ${timeAgo}
         </div>
+        ${event.summary ? `
+          <div style="font-size: 11px; color: #9aa0a6; line-height: 1.5; margin-bottom: 8px; padding-top: 6px; border-top: 1px solid #3c4043;">
+            ${event.summary}
+          </div>
+        ` : ''}
         ${event.sourceCount > 1 ? `
-          <div style="margin-top: 8px; padding: 4px 8px; background: rgba(255, 51, 102, 0.2); 
+          <div style="margin-top: 8px; padding: 4px 8px; background: rgba(255, 51, 102, 0.15); 
                       border: 1px solid #ff3366; border-radius: 4px; display: inline-block;
                       font-size: 10px; color: #ff3366; font-weight: 600;">
             ⚡ ${event.sourceCount} CORRELATED SOURCES
@@ -392,6 +403,34 @@ export class WorldMap {
         ` : ''}
       </div>
     `;
+    }
+
+    /**
+     * Format timestamp as time ago
+     */
+    formatTimeAgo(timestamp) {
+        if (!timestamp) return 'Recent';
+
+        const now = new Date();
+        const date = new Date(timestamp);
+
+        // Check for invalid date
+        if (isNaN(date.getTime())) return 'Recent';
+
+        const diffMs = now - date;
+
+        // Handle future dates or negative differences
+        if (diffMs < 0) return 'Just now';
+
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return date.toLocaleDateString();
     }
 
     /**
@@ -453,12 +492,15 @@ export class WorldMap {
         const eventsHtml = sortedEvents.map(event => {
             const severity = this.getSeverityColor(event.importance);
             const severityLabel = severityLabels[event.importance] || 'LOW';
+            const timeAgo = this.formatTimeAgo(event.timestamp);
 
             return `
                 <div class="cluster-event-item" style="
                     padding: 10px;
                     border-bottom: 1px solid #3c4043;
                     cursor: pointer;
+                    background: #111820;
+                    transition: background 0.2s ease;
                 " onclick="window.open('${event.sourceUrl || '#'}', '_blank')">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-size: 10px; color: #00d4ff; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -469,16 +511,19 @@ export class WorldMap {
                             ${severityLabel}
                         </span>
                     </div>
-                    <div style="font-size: 12px; font-weight: 600; color: #e8eaed; line-height: 1.3;">
+                    <div style="font-size: 12px; font-weight: 600; color: #e8eaed; line-height: 1.3; margin-bottom: 4px;">
                         ${event.title}
+                    </div>
+                    <div style="font-size: 10px; color: #9aa0a6;">
+                        🕐 ${timeAgo}
                     </div>
                 </div>
             `;
         }).join('');
 
         return `
-            <div class="cluster-popup-content" style="font-family: Inter, sans-serif;">
-                <div style="padding: 10px; background: #1a2332; border-bottom: 2px solid #00d4ff; margin-bottom: 0;">
+            <div class="cluster-popup-content" style="font-family: 'Inter', sans-serif; background: #0a0e14;">
+                <div style="padding: 10px; background: #1a2332; border-bottom: 2px solid #00d4ff;">
                     <span style="font-size: 12px; font-weight: 700; color: #00d4ff; letter-spacing: 1px;">
                         📍 ${events.length} EVENTS IN THIS AREA
                     </span>
@@ -567,6 +612,12 @@ export class WorldMap {
      * @param {string} filterLevel - Filter type: 'all', 'critical', 'high', 'medium', 'low', 'earthquake', 'developing'
      */
     filterMarkers(filterLevel) {
+        // Store current filter level for reference
+        this.currentFilter = filterLevel;
+
+        // Clear and rebuild cluster group for reliable filtering
+        this.markerClusterGroup.clearLayers();
+
         this.markers.forEach((marker, eventId) => {
             const event = this.eventData.get(eventId);
             if (!event) return;
@@ -574,13 +625,7 @@ export class WorldMap {
             const show = this.shouldShowEvent(event, filterLevel);
 
             if (show) {
-                if (!this.markerClusterGroup.hasLayer(marker)) {
-                    this.markerClusterGroup.addLayer(marker);
-                }
-            } else {
-                if (this.markerClusterGroup.hasLayer(marker)) {
-                    this.markerClusterGroup.removeLayer(marker);
-                }
+                this.markerClusterGroup.addLayer(marker);
             }
         });
 

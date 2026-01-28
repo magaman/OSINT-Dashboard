@@ -14,6 +14,8 @@ let newsFeed = null;
 let worldMap = null;
 let events = [];
 let isLoading = false;
+let lastUpdateTime = null;
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Initialize the application
@@ -41,7 +43,7 @@ async function init() {
   setInterval(updateClock, 1000);
 
   // Auto-refresh events every 5 minutes
-  setInterval(refreshEvents, 5 * 60 * 1000);
+  setInterval(refreshEvents, REFRESH_INTERVAL);
 
   showLoadingState(false);
   console.log('✅ OSINT Dashboard ready - LIVE DATA');
@@ -67,14 +69,20 @@ async function refreshEvents() {
     worldMap.zones.clear();
     worldMap.eventData.clear();
 
+    // Clear the cluster layer too
+    if (worldMap.markerClusterGroup) {
+      worldMap.markerClusterGroup.clearLayers();
+    }
+
     // Add events to map (only those with valid locations)
     worldMap.addEvents(events);
 
     // Render news feed
     newsFeed.render(events);
 
-    // Update event counter
+    // Update event counter and timestamps
     updateEventCounter(events.length);
+    updateDataTimestamps();
 
     console.log(`✅ Loaded ${events.length} live events`);
   } catch (error) {
@@ -86,14 +94,17 @@ async function refreshEvents() {
 }
 
 /**
- * Show/hide loading state
+ * Show/hide loading state with modern spinner
  */
 function showLoadingState(loading) {
   const indicator = document.getElementById('eventCount');
   if (indicator) {
     if (loading) {
-      indicator.textContent = '⏳';
+      indicator.classList.add('loading');
+      indicator.innerHTML = '<div class="loading-spinner"></div>';
       indicator.title = 'Loading live data...';
+    } else {
+      indicator.classList.remove('loading');
     }
   }
 }
@@ -107,6 +118,37 @@ function updateEventCounter(count) {
     indicator.textContent = count;
     indicator.title = `${count} live events`;
   }
+}
+
+/**
+ * Update data timestamps (last update / next update)
+ */
+function updateDataTimestamps() {
+  lastUpdateTime = new Date();
+
+  const lastUpdateEl = document.getElementById('lastUpdate');
+  const nextUpdateEl = document.getElementById('nextUpdate');
+
+  if (lastUpdateEl) {
+    lastUpdateEl.textContent = formatTime(lastUpdateTime);
+  }
+
+  if (nextUpdateEl) {
+    const nextUpdate = new Date(lastUpdateTime.getTime() + REFRESH_INTERVAL);
+    nextUpdateEl.textContent = formatTime(nextUpdate);
+  }
+}
+
+/**
+ * Format time as HH:MM:SS
+ */
+function formatTime(date) {
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
 }
 
 /**

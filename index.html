@@ -31,12 +31,18 @@
           <span class="pulse"></span>
           <span class="status-text">LIVE</span>
         </div>
+        <div class="event-counter-badge">
+          <span class="counter-value" id="eventCount">0</span>
+          <span class="counter-label">EVENTS</span>
+        </div>
       </div>
       <div class="header-right">
-        <div class="timestamp" id="currentTime"></div>
-        <div class="event-counter">
-          <span class="counter-label">ACTIVE EVENTS</span>
-          <span class="counter-value" id="eventCount">0</span>
+        <div class="time-section">
+          <div class="current-time" id="currentTime"></div>
+          <div class="data-timestamps">
+            <span class="data-label">LAST UPDATE: <span id="lastUpdate">--:--:--</span></span>
+            <span class="data-label">NEXT UPDATE: <span id="nextUpdate">--:--:--</span></span>
+          </div>
         </div>
       </div>
     </header>
