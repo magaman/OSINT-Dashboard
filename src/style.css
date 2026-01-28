@@ -116,7 +116,7 @@ body {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   backdrop-filter: blur(10px);
-  z-index: 100;
+  z-index: 2000;
 }
 
 .header-left {
@@ -784,6 +784,7 @@ body {
 
 .leaflet-popup-content {
   margin: 0;
+  min-width: 340px;
 }
 
 .leaflet-popup-tip {
