@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OSINT Situation Dashboard</title>
+  <meta name="description"
+    content="Real-time open source intelligence dashboard with global event monitoring and threat visualization" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="dashboard-header">
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">◉</span>
+          <span class="logo-text">OSINT DASHBOARD</span>
+        </div>
+        <div class="status-indicator">
+          <span class="pulse"></span>
+          <span class="status-text">LIVE</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="timestamp" id="currentTime"></div>
+        <div class="event-counter">
+          <span class="counter-label">ACTIVE EVENTS</span>
+          <span class="counter-value" id="eventCount">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+      <!-- News Feed Panel -->
+      <aside class="news-panel" id="newsPanel">
+        <div class="panel-header">
+          <h2>SITUATION FEED</h2>
+          <div class="filter-controls">
+            <button class="filter-btn active" data-filter="all">ALL</button>
+            <button class="filter-btn filter-critical" data-filter="critical">CRIT</button>
+            <button class="filter-btn filter-high" data-filter="high">HIGH</button>
+            <button class="filter-btn filter-medium" data-filter="medium">MED</button>
+            <button class="filter-btn filter-low" data-filter="low">LOW</button>
+            <button class="filter-btn filter-earthquake" data-filter="earthquake">🌋</button>
+            <button class="filter-btn filter-developing" data-filter="developing">DEV</button>
+          </div>
+        </div>
+        <div class="news-feed" id="newsFeed">
+          <!-- News cards will be injected here -->
+        </div>
+      </aside>
+
+      <!-- Map Container -->
+      <section class="map-container">
+        <div id="worldMap"></div>
+        <div class="map-overlay">
+          <div class="map-legend">
+            <div class="legend-item">
+              <span class="legend-zone regional"></span>
+              <span>Regional Zone</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot critical"></span>
+              <span>Critical</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot high"></span>
+              <span>High</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot medium"></span>
+              <span>Medium</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot low"></span>
+              <span>Low</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-earthquake">🌋</span>
+              <span>Earthquake</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
