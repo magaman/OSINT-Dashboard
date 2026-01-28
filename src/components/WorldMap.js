@@ -362,7 +362,7 @@ export class WorldMap {
       <div class="popup-content" style="
         font-family: 'Inter', sans-serif;
         background: #111820;
-        padding: 12px;
+        padding: 12px 32px 12px 12px;
         border-radius: 6px;
       ">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -523,7 +523,7 @@ export class WorldMap {
 
         return `
             <div class="cluster-popup-content" style="font-family: 'Inter', sans-serif; background: #0a0e14;">
-                <div style="padding: 10px; background: #1a2332; border-bottom: 2px solid #00d4ff;">
+                <div style="padding: 10px 32px 10px 10px; background: #1a2332; border-bottom: 2px solid #00d4ff;">
                     <span style="font-size: 12px; font-weight: 700; color: #00d4ff; letter-spacing: 1px;">
                         📍 ${events.length} EVENTS IN THIS AREA
                     </span>
