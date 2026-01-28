@@ -82,8 +82,22 @@ export async function fetchRSSFeed(feedKey) {
                 throw new Error(`RSS fetch error: ${response.status}`);
             }
 
-            const data = await response.json();
-            const xmlText = data.contents || data;
+            // Handle different proxy response formats
+            const contentType = response.headers.get('content-type') || '';
+            let xmlText;
+
+            if (contentType.includes('application/json')) {
+                // allorigins returns JSON with contents property
+                const data = await response.json();
+                xmlText = data.contents;
+            } else {
+                // corsproxy.io returns raw XML/text
+                xmlText = await response.text();
+            }
+
+            if (!xmlText || xmlText.includes('parsererror')) {
+                throw new Error('Invalid XML response');
+            }
 
             return parseRSSXML(xmlText, feed.name);
         } catch (error) {
